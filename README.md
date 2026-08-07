@@ -1,4 +1,12 @@
 # backtest-engine
+<p align="center">
+  <a href="https://github.com/adivx/backtest-engine/actions"><img src="https://img.shields.io/github/actions/workflow/status/adivx/backtest-engine/ci.yml?branch=main&label=CI&logo=github" /></a>
+  <img src="https://img.shields.io/github/license/adivx/backtest-engine" />
+  <img src="https://img.shields.io/github/last-commit/adivx/backtest-engine" />
+  <img src="https://img.shields.io/github/repo-size/adivx/backtest-engine" />
+</p>
+
+
 
 A lightweight, dependency-light **event-driven backtesting engine** for Python 3.9+.
 Pick a strategy, point it at (synthetic or real) OHLCV bars, and get back a full
