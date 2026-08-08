@@ -17,6 +17,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from . import __version__
 from .data import DataError, generate_synthetic, load_csv
 from .engine import Backtest, BacktestResult
 from .metrics import summarize
@@ -55,6 +56,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p.add_argument("--trades", type=int, default=10, help="max trade rows to print")
     p.add_argument("--no-trades", action="store_true", help="hide the trade log")
+    p.add_argument("--version", action="version",
+                   version=f"%(prog)s {__version__}")
     return p
 
 
