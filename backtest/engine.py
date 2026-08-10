@@ -105,8 +105,12 @@ class Backtest:
                     is_buy = delta > 0.0
                     # Slip in the direction of the trade; buys pay more, sells net less.
                     fill = bar.open * ((1.0 + self.slippage) if is_buy else (1.0 - self.slippage))
-                    cost = abs(delta) * fill + self.commission
-                    cash = cash - cost if is_buy else cash + cost
+                    if is_buy:
+                        cash -= abs(delta) * fill + self.commission
+                    else:
+                        # Proceeds net of the sell-side commission — the flat
+                        # `+ cost` form credited the fee back to cash.
+                        cash += abs(delta) * fill - self.commission
 
                     if is_buy:
                         if abs(shares) < 1e-9:
