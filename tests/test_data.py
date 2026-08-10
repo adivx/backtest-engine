@@ -67,6 +67,25 @@ class TestCSV(unittest.TestCase):
         with self.assertRaises(DataError):
             load_csv("/nonexistent/definitely-not-here.csv")
 
+    def test_duplicate_date_raises(self):
+        path = self._write(
+            [("2026-01-05", 1, 3, 2, 2, 100), ("2026-01-05", 2, 4, 1, 3, 100)]
+        )
+        with self.assertRaises(DataError):
+            load_csv(path)
+
+    def test_out_of_order_dates_raise(self):
+        path = self._write(
+            [("2026-01-06", 1, 3, 2, 2, 100), ("2026-01-05", 2, 4, 1, 3, 100)]
+        )
+        with self.assertRaises(DataError):
+            load_csv(path)
+
+    def test_malformed_date_raises(self):
+        path = self._write([("05/01/2026", 1, 3, 2, 2, 100)])
+        with self.assertRaises(DataError):
+            load_csv(path)
+
 
 if __name__ == "__main__":
     unittest.main()

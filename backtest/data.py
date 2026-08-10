@@ -99,7 +99,8 @@ def load_csv(path: str) -> list[Bar]:
 
     Expected columns (any order, names case-insensitive):
     ``date, open, high, low, close, volume``. Raises :class:`DataError`
-    on missing columns, non-numeric prices, or inverted high/low.
+    on missing columns, non-numeric prices, inverted high/low, or dates
+    that are malformed, duplicated, or out of chronological order.
     """
     try:
         fh = open(path, newline="")
@@ -118,6 +119,7 @@ def load_csv(path: str) -> list[Bar]:
             raise DataError(f"{path}: missing column(s): {', '.join(missing)}")
 
         bars: list[Bar] = []
+        prev_date: date | None = None
         for lineno, row in enumerate(reader, start=2):
             try:
                 o, h, l, c = (
@@ -133,7 +135,19 @@ def load_csv(path: str) -> list[Bar]:
 
             if l > h:
                 raise DataError(f"{path}:{lineno}: low ({l}) above high ({h})")
-            bars.append(Bar(row[lowered["date"]].strip(), o, h, l, c, vol))
+            date_str = row[lowered["date"]].strip()
+            try:
+                day = date.fromisoformat(date_str)
+            except ValueError:
+                raise DataError(
+                    f"{path}:{lineno}: invalid date {date_str!r} (expected YYYY-MM-DD)"
+                ) from None
+            if prev_date is not None and day <= prev_date:
+                raise DataError(
+                    f"{path}:{lineno}: date {date_str!r} out of order or duplicated"
+                )
+            prev_date = day
+            bars.append(Bar(date_str, o, h, l, c, vol))
 
     if not bars:
         raise DataError(f"{path}: no data rows")
