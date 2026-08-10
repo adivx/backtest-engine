@@ -9,6 +9,7 @@ from backtest.metrics import (
     profit_factor,
     sharpe_ratio,
     sortino_ratio,
+    summarize,
     total_return,
     win_rate,
 )
@@ -81,6 +82,27 @@ class TestTradeStats(unittest.TestCase):
     def test_profit_factor(self):
         self.assertAlmostEqual(profit_factor([trade(10), trade(20), trade(-5)]), 6.0)
         self.assertEqual(profit_factor([trade(10), trade(5)]), math.inf)
+
+
+class TestSummarize(unittest.TestCase):
+    def test_headline_metrics(self):
+        curve = [100_000.0, 110_000.0, 95_000.0, 120_000.0]
+        s = summarize(curve, [trade(5000.0), trade(-3000.0), trade(8000.0)], 100_000.0)
+        self.assertAlmostEqual(s["final_equity"], 120_000.0)
+        self.assertAlmostEqual(s["total_return_pct"], 20.0)
+        # Peak at index 1 (110k), trough at index 2 (95k).
+        self.assertAlmostEqual(s["max_drawdown_pct"], 15_000 / 110_000 * 100.0)
+        self.assertEqual((s["dd_peak_idx"], s["dd_trough_idx"]), (1, 2))
+        self.assertEqual(s["num_trades"], 3)
+        self.assertAlmostEqual(s["win_rate_pct"], 200.0 / 3, places=4)
+        self.assertAlmostEqual(s["profit_factor"], 13_000 / 3_000, places=6)
+
+    def test_single_bar_curve(self):
+        s = summarize([100_000.0], [], 100_000.0)
+        self.assertAlmostEqual(s["final_equity"], 100_000.0)
+        self.assertAlmostEqual(s["total_return_pct"], 0.0)
+        self.assertEqual(s["num_trades"], 0)
+        self.assertEqual(s["sharpe"], 0.0)
 
 
 if __name__ == "__main__":

@@ -80,6 +80,20 @@ class TestExecutionCosts(unittest.TestCase):
         )
         self.assertAlmostEqual(result.final_equity, 100_000, places=4)
 
+    def test_full_buy_with_costs_never_borrows(self):
+        # With slippage + commission a naive full-position buy overspends and
+        # implicitly borrows; a subsequent gap to ~zero then shows through as
+        # negative equity. The order-size cap keeps the model fully in cash.
+        bars = [
+            Bar("2026-08-01", 100, 100, 100, 100, 1_000),
+            Bar("2026-08-02", 100, 100, 100, 100, 1_000),
+            Bar("2026-08-03", 0.05, 0.05, 0.05, 0.05, 1_000),
+        ]
+        result = Backtest(initial_cash=100_000, commission=10, slippage=0.001).run(
+            bars, _BuyThenFlat()
+        )
+        self.assertGreaterEqual(min(result.equity_curve), 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

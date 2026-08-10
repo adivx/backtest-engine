@@ -106,42 +106,48 @@ class Backtest:
                     # Slip in the direction of the trade; buys pay more, sells net less.
                     fill = bar.open * ((1.0 + self.slippage) if is_buy else (1.0 - self.slippage))
                     if is_buy:
-                        cash -= abs(delta) * fill + self.commission
-                    else:
-                        # Proceeds net of the sell-side commission — the flat
-                        # `+ cost` form credited the fee back to cash.
-                        cash += abs(delta) * fill - self.commission
-
-                    if is_buy:
-                        if abs(shares) < 1e-9:
-                            shares = 0.0
-                            entry_date, entry_price, entry_shares = bar.date, fill, delta
+                        # A 100% target can cost more than the cash on hand once
+                        # slippage and commission are added; trim the order so
+                        # the model never borrows (cash never goes negative).
+                        delta = min(delta, max(0.0, (cash - self.commission) / fill))
+                    if abs(delta) > 1e-12:
+                        if is_buy:
+                            cash -= abs(delta) * fill + self.commission
                         else:
-                            # Weighted-average entry across adds.
-                            entry_price = (entry_price * shares + delta * fill) / (shares + delta)
-                            entry_shares += delta
-                        shares += delta
-                    else:
-                        realized += abs(delta) * (fill - entry_price)
-                        shares += delta  # delta < 0 here
-                        if abs(shares) < 1e-9:
-                            shares = 0.0
-                            trades.append(
-                                Trade(
-                                    entry_date=entry_date or bar.date,
-                                    exit_date=bar.date,
-                                    entry_price=round(entry_price, 4),
-                                    exit_price=round(fill, 4),
-                                    shares=round(entry_shares, 4),
-                                    pnl=round(realized, 2),
-                                    return_pct=round(
-                                        realized / (entry_price * entry_shares) * 100.0, 2
+                            # Proceeds net of the sell-side commission — the flat
+                            # `+ cost` form credited the fee back to cash.
+                            cash += abs(delta) * fill - self.commission
+
+                        if is_buy:
+                            if abs(shares) < 1e-9:
+                                shares = 0.0
+                                entry_date, entry_price, entry_shares = bar.date, fill, delta
+                            else:
+                                # Weighted-average entry across adds.
+                                entry_price = (entry_price * shares + delta * fill) / (shares + delta)
+                                entry_shares += delta
+                            shares += delta
+                        else:
+                            realized += abs(delta) * (fill - entry_price)
+                            shares += delta  # delta < 0 here
+                            if abs(shares) < 1e-9:
+                                shares = 0.0
+                                trades.append(
+                                    Trade(
+                                        entry_date=entry_date or bar.date,
+                                        exit_date=bar.date,
+                                        entry_price=round(entry_price, 4),
+                                        exit_price=round(fill, 4),
+                                        shares=round(entry_shares, 4),
+                                        pnl=round(realized, 2),
+                                        return_pct=round(
+                                            realized / (entry_price * entry_shares) * 100.0, 2
+                                        )
+                                        if entry_price * entry_shares
+                                        else 0.0,
                                     )
-                                    if entry_price * entry_shares
-                                    else 0.0,
                                 )
-                            )
-                            entry_date, entry_price, entry_shares, realized = None, 0.0, 0.0, 0.0
+                                entry_date, entry_price, entry_shares, realized = None, 0.0, 0.0, 0.0
 
             # ---- 2. Mark to market at the close ---------------------------
             dates.append(bar.date)
