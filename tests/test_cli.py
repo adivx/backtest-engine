@@ -49,6 +49,15 @@ class TestCsvRun(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 1)
 
 
+class TestStrategyErrors(unittest.TestCase):
+    def test_fast_ge_slow_exits_1_cleanly(self):
+        # MovingAverageCross rejects fast >= slow; the CLI must surface that
+        # as a clean error, not a traceback.
+        with self.assertRaises(SystemExit) as ctx:
+            main(["--fast", "60", "--slow", "20", "--no-trades"])
+        self.assertEqual(ctx.exception.code, 1)
+
+
 class TestArgParser(unittest.TestCase):
     def test_version_flag(self):
         with self.assertRaises(SystemExit) as ctx:

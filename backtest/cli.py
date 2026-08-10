@@ -157,12 +157,11 @@ def main(argv: list[str] | None = None) -> None:
         console.print(f"[red]error[/red] {exc}")
         raise SystemExit(1) from exc
 
-    if args.strategy == "ma_cross":
-        strategy = MovingAverageCross(fast=args.fast, slow=args.slow)
-    else:
-        strategy = BuyAndHold()
-
     try:
+        if args.strategy == "ma_cross":
+            strategy = MovingAverageCross(fast=args.fast, slow=args.slow)
+        else:
+            strategy = BuyAndHold()
         result = Backtest(
             initial_cash=args.initial_cash,
             commission=args.commission,
