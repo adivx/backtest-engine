@@ -17,7 +17,7 @@ Third piece of a quant portfolio:
 
 | Project | Shows |
 |---|---|
-| [ticker-terminal](https://github.com/adivx) | data engineering / live market data |
+| [ticker-terminal](https://github.com/adivx/ticker-terminal) | data engineering / live market data |
 | [option-pricer](https://github.com/adivx/option-pricer) | derivatives math (Black–Scholes + Greeks) |
 | **backtest-engine** | strategy design, execution simulation, risk metrics |
 
