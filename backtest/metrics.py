@@ -18,14 +18,21 @@ from .engine import Trade
 
 
 def total_return(equity_curve: list[float]) -> float:
-    """Total simple return: ``final / initial - 1``."""
+    """Total simple return: ``final / initial - 1``.
+
+    Returns 0.0 for empty/flat curves to avoid crashes in edge cases.
+    """
     if len(equity_curve) < 2 or equity_curve[0] == 0:
         return 0.0
     return equity_curve[-1] / equity_curve[0] - 1.0
 
 
 def cagr(equity_curve: list[float], periods_per_year: int = 252) -> float:
-    """Compound annual growth rate over ``n`` return periods."""
+    """Compound annual growth rate over ``n`` return periods.
+
+    Returns 0.0 for degenerate curves (too short, zero initial, or non-positive
+    final value) to keep downstream code safe.
+    """
     periods = len(equity_curve) - 1
     if periods < 1 or equity_curve[0] == 0 or equity_curve[-1] <= 0:
         return 0.0
@@ -33,7 +40,10 @@ def cagr(equity_curve: list[float], periods_per_year: int = 252) -> float:
 
 
 def annualized_volatility(returns: list[float], periods_per_year: int = 252) -> float:
-    """Sample standard deviation of daily returns, annualized."""
+    """Sample standard deviation of daily returns, annualized.
+
+    Returns 0.0 for series with < 2 observations (no variance defined).
+    """
     if len(returns) < 2:
         return 0.0
     mean = sum(returns) / len(returns)
@@ -81,7 +91,11 @@ def max_drawdown(equity_curve: list[float]) -> tuple[float, int, int]:
     Returns ``(drawdown, peak_index, trough_index)`` where ``drawdown`` is a
     positive fraction of the peak, e.g. ``(0.25, 10, 40)`` = a -25% peak-to-
     trough between bar 10 and bar 40.
+
+    For empty curves returns (0.0, 0, 0).
     """
+    if not equity_curve:
+        return 0.0, 0, 0
     peak = equity_curve[0]
     peak_idx = 0
     worst = 0.0
@@ -97,14 +111,22 @@ def max_drawdown(equity_curve: list[float]) -> tuple[float, int, int]:
 
 
 def win_rate(trades: list[Trade]) -> float:
-    """Fraction of round-trips that closed with positive PnL."""
+    """Fraction of round-trips that closed with positive PnL.
+
+    Returns 0.0 for empty trade list (avoids division by zero).
+    """
     if not trades:
         return 0.0
     return sum(1 for t in trades if t.pnl > 0) / len(trades)
 
 
 def profit_factor(trades: list[Trade]) -> float:
-    """Gross profit / gross loss. ``inf`` if there were no losing trades."""
+    """Gross profit / gross loss. ``inf`` if there were no losing trades.
+
+    Returns 0.0 if no trades at all (safe for downstream reporting).
+    """
+    if not trades:
+        return 0.0
     gross_win = sum(t.pnl for t in trades if t.pnl > 0)
     gross_loss = abs(sum(t.pnl for t in trades if t.pnl < 0))
     if gross_loss == 0:
